@@ -1,8 +1,12 @@
 use crate::vga_colors::{Color, color_code};
+use core::arch::asm;
 
 const VGA_BUFFER: usize = 0xb8000;
 const VGA_WIDTH: usize = 80;
 const VGA_HEIGHT: usize = 25;
+
+const VGA_CTRL_PORT: u16 = 0x3D4;
+const VGA_DATA_PORT: u16 = 0x3D5;
 
 pub struct Writer {
     col: usize,
@@ -13,6 +17,28 @@ pub struct Writer {
 impl Writer {
     pub const fn new(color: u8) -> Self {
         Self { col: 0, row: 0, color }
+    }
+
+    fn update_cursor(&self) {
+        let pos = self.row * VGA_WIDTH + self.col;
+        unsafe {
+            outb(VGA_CTRL_PORT, 0x0F);
+            outb(VGA_DATA_PORT, (pos & 0xFF) as u8);
+
+            outb(VGA_CTRL_PORT, 0x0E);
+            outb(VGA_DATA_PORT, ((pos >> 8) & 0xFF) as u8);
+        }
+    }
+
+    pub fn enable_cursor(&self) {
+        unsafe {
+            outb(VGA_CTRL_PORT, 0x0A);
+            outb(VGA_DATA_PORT, 14);
+
+            outb(VGA_CTRL_PORT, 0x0B);
+            outb(VGA_DATA_PORT, 15);
+        }
+        self.update_cursor();
     }
 
     pub fn write_byte(&mut self, byte: u8) {
@@ -32,6 +58,7 @@ impl Writer {
                 self.col += 1;
             }
         }
+        self.update_cursor();
     }
 
     pub fn write_str(&mut self, s: &str) {
@@ -95,4 +122,27 @@ impl Writer {
     pub fn set_color(&mut self, fg: Color, bg: Color) {
         self.color = color_code(fg, bg);
     }
+
+    pub fn get_col(&self) -> usize {
+        self.col
+    }
+
+    pub fn get_row(&self) -> usize {
+        self.row
+    }
+
+    pub fn set_position(&mut self, col: usize, row: usize) {
+        self.col = col;
+        self.row = row;
+        self.update_cursor();
+    }
+}
+
+unsafe fn outb(port: u16, value: u8) {
+    asm!(
+        "out dx, al",
+        in("dx") port,
+        in("al") value,
+        options(nostack)
+    );
 }

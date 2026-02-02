@@ -20,17 +20,14 @@ stack_top:
 .global _start
 .type _start, @function
 _start:
-	/* Set up stack */
 	mov $stack_top, %esp
 
-	/* Reset EFLAGS */
 	pushl $0
 	popf
 
-	/* Disable FPU (prevents SSE faults if compiler generates FPU code) */
 	mov %cr0, %eax
-	and $0xFFFFFFFB, %eax  /* Clear EM (bit 2) - no FPU emulation */
-	or $0x2, %eax          /* Set MP (bit 1) */
+	and $0xFFFFFFFB, %eax
+	or $0x2, %eax
 	mov %eax, %cr0
 
 	call kernel_main
