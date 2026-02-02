@@ -10,6 +10,7 @@ mod keyboard;
 mod cli;
 mod intrinsics;
 mod idt;
+mod snake;
 
 use vga_colors::{Color, color_code};
 use writer::Writer;

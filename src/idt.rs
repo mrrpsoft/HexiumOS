@@ -40,9 +40,11 @@ pub struct IdtPointer {
 const IDT_SIZE: usize = 256;
 static mut IDT: [IdtEntry; IDT_SIZE] = [IdtEntry::empty(); IDT_SIZE];
 static mut IDT_PTR: IdtPointer = IdtPointer { limit: 0, base: 0 };
+static mut TICK_COUNT: u32 = 0;
 
 pub fn init() {
     unsafe {
+        IDT[0x20].set_handler(timer_interrupt_handler as u32);
         IDT[0x21].set_handler(keyboard_interrupt_handler as u32);
 
         IDT_PTR.limit = (core::mem::size_of::<[IdtEntry; IDT_SIZE]>() - 1) as u16;
@@ -52,10 +54,24 @@ pub fn init() {
     }
 
     init_pics();
+    init_pit();
 
     unsafe {
         asm!("sti", options(nostack));
     }
+}
+
+fn init_pit() {
+    let divisor: u16 = 11932;
+    unsafe {
+        outb(0x43, 0x36);
+        outb(0x40, (divisor & 0xFF) as u8);
+        outb(0x40, ((divisor >> 8) & 0xFF) as u8);
+    }
+}
+
+pub fn get_ticks() -> u32 {
+    unsafe { TICK_COUNT }
 }
 
 fn init_pics() {
@@ -72,7 +88,7 @@ fn init_pics() {
         outb(0x21, 0x01);
         outb(0xA1, 0x01);
 
-        outb(0x21, 0xFD);
+        outb(0x21, 0xFC);
         outb(0xA1, 0xFF);
     }
 }
@@ -104,13 +120,31 @@ static mut BUFFER_TAIL: usize = 0;
 
 pub fn get_scancode() -> Option<u8> {
     unsafe {
-        if BUFFER_HEAD == BUFFER_TAIL {
+        asm!("cli", options(nostack));
+        let result = if BUFFER_HEAD == BUFFER_TAIL {
             None
         } else {
             let scancode = KEY_BUFFER[BUFFER_TAIL];
             BUFFER_TAIL = (BUFFER_TAIL + 1) % BUFFER_SIZE;
             Some(scancode)
-        }
+        };
+        asm!("sti", options(nostack));
+        result
+    }
+}
+
+pub fn wait_for_interrupt() {
+    unsafe {
+        asm!("hlt", options(nostack));
+    }
+}
+
+pub fn flush_buffer() {
+    unsafe {
+        asm!("cli", options(nostack));
+        BUFFER_HEAD = 0;
+        BUFFER_TAIL = 0;
+        asm!("sti", options(nostack));
     }
 }
 
@@ -135,12 +169,31 @@ pub extern "C" fn keyboard_handler_inner() {
     }
 }
 
+#[no_mangle]
+pub extern "C" fn timer_handler_inner() {
+    unsafe {
+        TICK_COUNT = TICK_COUNT.wrapping_add(1);
+        outb(0x20, 0x20);
+    }
+}
+
 #[unsafe(naked)]
 #[no_mangle]
 pub unsafe extern "C" fn keyboard_interrupt_handler() {
     naked_asm!(
         "pusha",
         "call keyboard_handler_inner",
+        "popa",
+        "iretd",
+    );
+}
+
+#[unsafe(naked)]
+#[no_mangle]
+pub unsafe extern "C" fn timer_interrupt_handler() {
+    naked_asm!(
+        "pusha",
+        "call timer_handler_inner",
         "popa",
         "iretd",
     );

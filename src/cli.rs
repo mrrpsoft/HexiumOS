@@ -2,6 +2,7 @@ use crate::writer::Writer;
 use crate::keyboard::Keyboard;
 use crate::vga_colors::Color;
 use crate::idt;
+use crate::snake::SnakeGame;
 
 const MAX_COMMAND_LEN: usize = 80;
 
@@ -22,7 +23,7 @@ impl CLI {
 
     pub fn show_prompt(&self, writer: &mut Writer) {
         writer.set_color(Color::LightGreen, Color::Black);
-        writer.write_str("RustOS> ");
+        writer.write_str("HexiumOS> ");
         writer.set_color(Color::White, Color::Black);
     }
 
@@ -32,7 +33,10 @@ impl CLI {
         loop {
             let scancode = match idt::get_scancode() {
                 Some(sc) => sc,
-                None => continue,
+                None => {
+                    idt::wait_for_interrupt();
+                    continue;
+                }
             };
 
             if scancode & 0x80 != 0 {
@@ -102,21 +106,27 @@ impl CLI {
             writer.write_str("  hello   - Print a greeting\n");
             writer.write_str("  info    - Display system information\n");
             writer.write_str("  echo    - Echo back the command\n");
+            writer.write_str("  snake   - Play the snake game\n");
         } else if cmd == b"clear" {
             writer.clear();
         } else if cmd == b"hello" {
             writer.set_color(Color::Yellow, Color::Black);
-            writer.write_str("Hello from RustOS!\n");
+            writer.write_str("Hello from HexiumOS!\n");
             writer.set_color(Color::White, Color::Black);
         } else if cmd == b"info" {
             writer.set_color(Color::LightCyan, Color::Black);
-            writer.write_str("=== Hexium RustOS ===\n");
+            writer.write_str("=== Hexium HexiumOS ===\n");
             writer.set_color(Color::White, Color::Black);
             writer.write_str("A simple operating system written in Rust\n");
             writer.write_str("Version: 0.1.0\n");
         } else if cmd.starts_with(b"echo ") {
             writer.write_bytes(&cmd[5..]);
             writer.write_byte(b'\n');
+        } else if cmd == b"snake" {
+            let mut game = SnakeGame::new();
+            game.run(writer);
+            writer.clear();
+            writer.write_str("Thanks for playing!\n");
         } else {
             writer.set_color(Color::Red, Color::Black);
             writer.write_str("Unknown command: ");
