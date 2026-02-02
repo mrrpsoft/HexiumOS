@@ -3,6 +3,9 @@ use crate::keyboard::Keyboard;
 use crate::vga_colors::Color;
 use crate::idt;
 use crate::snake::SnakeGame;
+use crate::video_player::VideoPlayer;
+use crate::bad_apple_data::{FRAME_COUNT as BAD_APPLE_FRAME_COUNT, FRAME_WIDTH as BAD_APPLE_FRAME_WIDTH, FRAME_HEIGHT as BAD_APPLE_FRAME_HEIGHT, TARGET_FPS as BAD_APPLE_TARGET_FPS, FRAMES as BAD_APPLE_FRAMES};
+use crate::RAHH_data::{FRAME_COUNT as RAHH_FRAME_COUNT, FRAME_WIDTH as RAHH_FRAME_WIDTH, FRAME_HEIGHT as RAHH_FRAME_HEIGHT, TARGET_FPS as RAHH_TARGET_FPS, FRAMES as RAHH_FRAMES};
 
 const MAX_COMMAND_LEN: usize = 80;
 
@@ -101,12 +104,13 @@ impl CLI {
             writer.set_color(Color::LightCyan, Color::Black);
             writer.write_str("Available commands:\n");
             writer.set_color(Color::White, Color::Black);
-            writer.write_str("  help    - Show this help message\n");
-            writer.write_str("  clear   - Clear the screen\n");
-            writer.write_str("  hello   - Print a greeting\n");
-            writer.write_str("  info    - Display system information\n");
-            writer.write_str("  echo    - Echo back the command\n");
-            writer.write_str("  snake   - Play the snake game\n");
+            writer.write_str("  help         - Show this help message\n");
+            writer.write_str("  clear        - Clear the screen\n");
+            writer.write_str("  hello        - Print a greeting\n");
+            writer.write_str("  info         - Display system information\n");
+            writer.write_str("  echo <text>  - Echo back the text\n");
+            writer.write_str("  snake        - Play the snake game\n");
+            writer.write_str("  play <video> - Play a video (badapple)\n");
         } else if cmd == b"clear" {
             writer.clear();
         } else if cmd == b"hello" {
@@ -122,6 +126,25 @@ impl CLI {
         } else if cmd.starts_with(b"echo ") {
             writer.write_bytes(&cmd[5..]);
             writer.write_byte(b'\n');
+        } else if cmd.starts_with(b"play ") {
+            let video_name = &cmd[5..];
+            if video_name == b"badapple" {
+                let mut player = VideoPlayer::new(BAD_APPLE_FRAMES, BAD_APPLE_FRAME_COUNT, BAD_APPLE_FRAME_WIDTH, BAD_APPLE_FRAME_HEIGHT, BAD_APPLE_TARGET_FPS);
+                player.run();
+                writer.clear();
+                writer.write_str("Video finished!\n");
+            } else if video_name == b"RAHH" {
+                let mut player = VideoPlayer::new(RAHH_FRAMES, RAHH_FRAME_COUNT, RAHH_FRAME_WIDTH, RAHH_FRAME_HEIGHT, RAHH_TARGET_FPS);
+                player.run();
+                writer.clear();
+                writer.write_str("Video finished!\n");
+            } else {
+                writer.set_color(Color::Red, Color::Black);
+                writer.write_str("Unknown video: ");
+                writer.write_bytes(video_name);
+                writer.write_str("\nAvailable videos: badapple\n");
+                writer.set_color(Color::White, Color::Black);
+            }
         } else if cmd == b"snake" {
             let mut game = SnakeGame::new();
             game.run(writer);

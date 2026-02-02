@@ -122,7 +122,7 @@ impl SnakeGame {
         }
     }
 
-    fn draw(&self, writer: &mut Writer) {
+    fn draw(&self) {
         for i in 0..self.snake_len {
             let ch = if i == 0 { b'@' } else { b'o' };
             let color = 0x0A;
@@ -240,7 +240,7 @@ impl SnakeGame {
         }
         
         self.draw_box();
-        self.draw(writer);
+        self.draw();
         
         unsafe {
             let vga = VGA_BUFFER as *mut u8;
@@ -306,7 +306,7 @@ impl SnakeGame {
                 self.clear_game_area();
                 
                 if !self.update() {
-                    self.draw(writer);
+                    self.draw();
                     unsafe {
                         let vga = VGA_BUFFER as *mut u8;
                         let game_over_str = b"GAME OVER! Press Q to exit";
@@ -327,7 +327,7 @@ impl SnakeGame {
                     }
                 }
                 
-                self.draw(writer);
+                self.draw();
             }
         }
     }

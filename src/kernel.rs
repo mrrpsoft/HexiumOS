@@ -11,6 +11,9 @@ mod cli;
 mod intrinsics;
 mod idt;
 mod snake;
+mod video_player;
+mod bad_apple_data;
+mod RAHH_data;
 
 use vga_colors::{Color, color_code};
 use writer::Writer;
