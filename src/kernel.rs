@@ -1,16 +1,10 @@
 #![no_std]
 #![no_main]
-#![feature(naked_functions)]
 
 use core::panic::PanicInfo;
 
 mod vga_colors;
 mod writer;
-mod io;
-mod pic;
-mod idt;
-mod keyboard;
-mod interrupts;
 
 use vga_colors::{Color, color_code};
 use writer::Writer;
@@ -20,51 +14,22 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
-static mut WRITER: Option<Writer> = None;
-
-fn get_writer() -> &'static mut Writer {
-    unsafe {
-        WRITER.as_mut().unwrap()
-    }
-}
-
 #[no_mangle]
 pub extern "C" fn kernel_main() -> ! {
-    unsafe {
-        WRITER = Some(Writer::new(color_code(Color::LightGreen, Color::Black)));
-    }
-    
-    let writer = get_writer();
+    let mut writer = Writer::new(color_code(Color::LightGreen, Color::Black));
     writer.clear();
 
     writer.write_str("Welcome to Hexium OS!\n");
-    writer.write_str("> ");
 
-    unsafe {
-        interrupts::init();
-    }
+    writer.set_color(Color::Yellow, Color::Black);
+    writer.write_str("Sigma list:\n");
+    writer.set_color(Color::LightCyan, Color::Black);
+    writer.write_str("  - 67\n");
+    writer.write_str("  - So Sigma\n");
+    writer.write_str("  - Wowie\n");
+    writer.write_str("  - Bleh :P\n");
 
-    loop {
-        if keyboard::key_available() {
-            if let Some(key) = keyboard::pop_key() {
-                let writer = get_writer();
-                match key {
-                    keyboard::KEY_BACKSPACE => {
-                        writer.backspace();
-                    }
-                    keyboard::KEY_ENTER => {
-                        writer.write_byte(b'\n');
-                        writer.write_str("> ");
-                    }
-                    _ => {
-                        writer.write_byte(key);
-                    }
-                }
-            }
-        }
-        
-        unsafe {
-            core::arch::asm!("hlt");
-        }
-    }
+    loop {}
 }
+
+
