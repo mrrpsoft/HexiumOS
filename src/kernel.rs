@@ -14,6 +14,8 @@ mod snake;
 mod video_player;
 mod bad_apple_data;
 mod RAHH_data;
+mod filesystem;
+mod editor;
 
 use vga_colors::{Color, color_code};
 use writer::Writer;
@@ -46,6 +48,8 @@ pub extern "C" fn kernel_main() -> ! {
     writer.write_str("=== Welcome to HexiumOS ===\n");
     writer.set_color(Color::White, Color::Black);
     writer.write_str("Type 'help' for available commands.\n\n");
+
+    filesystem::get_filesystem().init();
 
     let mut cli = CLI::new();
     cli.run(&mut writer);
