@@ -197,16 +197,16 @@ impl CLI {
             unsafe {
                     graphics::enter_mode_13h(); 
         
-                    let graphics1 = graphics; //TODO: Rename "graphics1"
-                    graphics1.clear_screen(0); 
+                    let graphics_test = graphics; 
+                    graphics_test.clear_screen(0); 
                     for x in 0..320 {
-                        graphics1.draw_pixel(x, 0, 15); // White line at y=0
+                        graphics_test.draw_pixel(x, 0, 15); // White line at y=0
                     }
-                    graphics1.draw_pixel(160, 100, 14); // Draw a yellow pixel in the center
+                    graphics_test.draw_pixel(160, 100, 14); // Draw a yellow pixel in the center
                     
                     for y in 0..50 {
                         for x in 0..50 {
-                         graphics1.draw_pixel(x, y, 14);
+                         graphics_test.draw_pixel(x, y, 14);
                        }
                        }
         
