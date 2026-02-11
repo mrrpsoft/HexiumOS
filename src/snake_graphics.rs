@@ -9,7 +9,7 @@ const VGA_BUFFER: usize = 0xb8000;
 const GAME_WIDTH: usize = 40;
 const GAME_HEIGHT: usize = 20;
 const GAME_OFFSET_X: usize = 20;
-const GAME_OFFSET_Y: usize = 2;
+const GAME_OFFSET_Y: usize = 16;
 const MAX_SNAKE_LEN: usize = 100;
 
 #[derive(Copy, Clone, PartialEq)]
@@ -155,6 +155,7 @@ pub fn new() -> Self {
     }
 
     fn clear_game_area(&self) {
+        self.snakeGraphics.clear_screen(0);
         for y in 0..GAME_HEIGHT {
             for x in 0..GAME_WIDTH {
                 self.draw_cell(x, y, b' ', 0x00);
@@ -163,6 +164,8 @@ pub fn new() -> Self {
     }
 
     fn draw(&self) {
+    
+        
         for i in 0..self.snake_len {
             let ch = if i == 0 { b'@' } else { b'o' };
             let color = 0x0A;
@@ -171,11 +174,14 @@ pub fn new() -> Self {
         
         self.draw_cell(self.food.x, self.food.y, b'*', 0x0C);
         
+        //self.snakeGraphics.draw_char('A',0,0,25);
+        
         unsafe {
             let vga = VGA_BUFFER as *mut u8;
             let score_str = b"Score: ";
             for (i, &byte) in score_str.iter().enumerate() {
                 let offset = i * 2;
+                self.snakeGraphics.draw_char(byte as char,i*8,0,0x0E);
                 //*vga.add(offset) = byte;
                 //*vga.add(offset + 1) = 0x0E;
             }
@@ -193,9 +199,17 @@ pub fn new() -> Self {
                     digit_count += 1;
                 }
             }
+            
+            for (i, &byte) in digits.iter().enumerate() {
+                let offset = i * 2;
+                self.snakeGraphics.draw_char(byte as char, (8 + i) * 8,0, 0x0E);
+                //*vga.add(offset) = byte;
+                //*vga.add(offset + 1) = 0x0E;
+            }
             for i in 0..digit_count {
-                let offset = (7 + i) * 2;
+                let offset = (8 + i) * 8;
                 //*vga.add(offset) = digits[digit_count - 1 - i];
+                //self.snakeGraphics.draw_char(digits[digit_count - 1 - i] as char,offset,0,25);
                 //*vga.add(offset + 1) = 0x0E;
             }
         }
@@ -340,6 +354,7 @@ pub fn new() -> Self {
                 last_tick = current_tick;
                 
                 self.clear_game_area();
+                self.draw_box();
                 
                 if !self.update() {
                     self.draw();

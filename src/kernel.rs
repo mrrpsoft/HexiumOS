@@ -25,6 +25,8 @@ mod snake_graphics;
 
 pub mod io;
 
+mod font;
+
 use vga_colors::{Color, color_code};
 use writer::Writer;
 use cli::CLI;
