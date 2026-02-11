@@ -21,6 +21,8 @@ mod hex_fetch;
 
 mod graphics;
 
+mod snake_graphics;
+
 pub mod io;
 
 use vga_colors::{Color, color_code};
